@@ -1,0 +1,126 @@
+import hashlib
+import time
+import random
+import math
+
+MAX_SUPPLY = 9_470_000
+MAGIC_NUMBER = 941
+ALLOCATION_AMOUNT = 7_150_000
+
+def create_wallet_address(base_string):
+    return hashlib.blake2s(base_string.encode()).hexdigest()[:40]
+
+class SyamailcoinBlock:
+    def __init__(self, previous_hash, transactions):
+        self.previous_hash = previous_hash
+        self.transactions = transactions
+        self.timestamp = time.time()
+        self.nonce = random.randint(0, 941_000)
+        self.hash = self.calculate_hash()
+
+    def calculate_hash(self):
+        block_string = f"{self.previous_hash}{self.transactions}{self.timestamp}{self.nonce}"
+        return hashlib.blake2s(block_string.encode()).hexdigest()
+
+    def mine_block(self, difficulty):
+        target = "0" * difficulty
+        while self.hash[:difficulty] != target:
+            self.nonce = random.randint(0, 941_000)
+            self.hash = self.calculate_hash()
+        print(f"Block mined: {self.hash}")
+
+class SyamailcoinBlockchain:
+    def __init__(self):
+        self.chain = [self.create_genesis_block()]
+        self.difficulty = 22
+        self.pending_transactions = []
+        self.syamailcoin_wallet_address_1 = create_wallet_address("^S⸷ASTE")
+        self.syamailcoin_wallet_address_2 = create_wallet_address("^S⸶DAN")
+        self.allocation_address = create_wallet_address("^S⸷ASTE")
+        self.current_supply = 0
+
+    def create_genesis_block(self):
+        return SyamailcoinBlock("0", [])
+
+    def get_latest_block(self):
+        return self.chain[-1]
+
+    def allocate_initial_funds(self):
+        amount_for_allocation_address = ALLOCATION_AMOUNT * 0.5
+        self.create_transaction("Genesis", self.allocation_address, amount_for_allocation_address, "50% allocation to ^S⸷ASTE")
+        
+        amount_per_address = (ALLOCATION_AMOUNT - amount_for_allocation_address) / 2
+        self.create_transaction("Genesis", self.syamailcoin_wallet_address_1, amount_per_address, "Distribution to ^S⸷ASTE")
+        self.create_transaction("Genesis", self.syamailcoin_wallet_address_2, amount_per_address, "Distribution to ^S⸶DAN")
+
+    def mine_pending_transactions(self, miner_address):
+        block = SyamailcoinBlock(self.get_latest_block().hash, self.pending_transactions)
+        block.mine_block(self.difficulty)
+        self.chain.append(block)
+        reward = self.calculate_mining_reward()
+        self.create_transaction("System", miner_address, reward, "Mining Reward")
+        self.pending_transactions = []
+
+    def create_transaction(self, sender, recipient, amount, description):
+        if sender != "Genesis" and sender != "System":
+            if self.get_balance(sender) < amount:
+                print(f"Error: Insufficient funds for {sender}")
+                return
+        transaction = {
+            "sender": sender, 
+            "recipient": recipient, 
+            "amount": amount, 
+            "description": description, 
+            "timestamp": time.time()
+        }
+        signature = hashlib.blake2s(str(transaction).encode()).hexdigest()
+        transaction["signature"] = signature
+        self.pending_transactions.append(transaction)
+        self.current_supply += amount
+
+    def get_balance(self, address):
+        balance = 0
+        for block in self.chain:
+            for transaction in block.transactions:
+                if transaction['sender'] == address:
+                    balance -= transaction['amount']
+                if transaction['recipient'] == address:
+                    balance += transaction['amount']
+        return balance
+
+    def calculate_mining_reward(self):
+        s = self.current_supply / MAX_SUPPLY * MAGIC_NUMBER
+        if s >= MAGIC_NUMBER:
+            return 0
+        return MAX_SUPPLY * (1 - (s/MAGIC_NUMBER)**2) - self.current_supply
+
+    def get_remaining_supply(self):
+        return MAX_SUPPLY - self.current_supply
+
+    def calculate_s_value(self):
+        return math.sqrt(1 - self.current_supply/MAX_SUPPLY) * MAGIC_NUMBER
+
+def main():
+    blockchain = SyamailcoinBlockchain()
+
+    blockchain.allocate_initial_funds()
+    blockchain.mine_pending_transactions(blockchain.syamailcoin_wallet_address_1)
+
+    print(f"Wallet Address 1 (^S⸷ASTE) balance: {blockchain.get_balance(blockchain.syamailcoin_wallet_address_1)}")
+    print(f"Wallet Address 2 (^S⸶DAN) balance: {blockchain.get_balance(blockchain.syamailcoin_wallet_address_2)}")
+    print(f"Current Supply: {blockchain.current_supply}")
+    print(f"Remaining Supply: {blockchain.get_remaining_supply()}")
+    print(f"Current S value: {blockchain.calculate_s_value()}")
+
+    blockchain.create_transaction(blockchain.syamailcoin_wallet_address_1, blockchain.syamailcoin_wallet_address_2, 1000, "Test transaction")
+    blockchain.mine_pending_transactions(blockchain.syamailcoin_wallet_address_2)
+
+    print("\nAfter transaction:")
+    print(f"Wallet Address 1 (^S⸷ASTE) balance: {blockchain.get_balance(blockchain.syamailcoin_wallet_address_1)}")
+    print(f"Wallet Address 2 (^S⸶DAN) balance: {blockchain.get_balance(blockchain.syamailcoin_wallet_address_2)}")
+    print(f"Current Supply: {blockchain.current_supply}")
+    print(f"Remaining Supply: {blockchain.get_remaining_supply()}")
+    print(f"Current S value: {blockchain.calculate_s_value()}")
+
+if __name__ == "__main__":
+    main()
