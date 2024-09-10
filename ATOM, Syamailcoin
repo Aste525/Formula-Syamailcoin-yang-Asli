@@ -1,0 +1,148 @@
+const crypto = require('crypto');
+const { performance } = require('perf_hooks');
+
+const MAX_SUPPLY = 9470000;
+const MAGIC_NUMBER = 941;
+const ALLOCATION_AMOUNT = 7150000;
+
+function createWalletAddress(baseString) {
+    return crypto.createHash('blake2s256').update(baseString).digest('hex').slice(0, 40);
+}
+
+class SyamailcoinBlock {
+    constructor(previousHash, transactions) {
+        this.previousHash = previousHash;
+        this.transactions = transactions;
+        this.timestamp = performance.now();
+        this.nonce = Math.floor(Math.random() * 941000);
+        this.hash = this.calculateHash();
+    }
+
+    calculateHash() {
+        const blockString = `${this.previousHash}${JSON.stringify(this.transactions)}${this.timestamp}${this.nonce}`;
+        return crypto.createHash('blake2s256').update(blockString).digest('hex');
+    }
+
+    mineBlock(difficulty) {
+        const target = '0'.repeat(difficulty);
+        while (this.hash.substring(0, difficulty) !== target) {
+            this.nonce = Math.floor(Math.random() * 941000);
+            this.hash = this.calculateHash();
+        }
+        console.log(`Block mined: ${this.hash}`);
+    }
+}
+
+class SyamailcoinBlockchain {
+    constructor() {
+        this.chain = [this.createGenesisBlock()];
+        this.difficulty = 22;
+        this.pendingTransactions = [];
+        this.syamailcoinWalletAddress1 = createWalletAddress('^S⸷ASTE');
+        this.syamailcoinWalletAddress2 = createWalletAddress('^S⸶DAN');
+        this.allocationAddress = createWalletAddress('^S⸷ASTE');
+        this.currentSupply = 0;
+    }
+
+    createGenesisBlock() {
+        return new SyamailcoinBlock('0', []);
+    }
+
+    getLatestBlock() {
+        return this.chain[this.chain.length - 1];
+    }
+
+    allocateInitialFunds() {
+        const amountForAllocationAddress = ALLOCATION_AMOUNT * 0.5;
+        this.createTransaction('Genesis', this.allocationAddress, amountForAllocationAddress, '50% allocation to ^S⸷ASTE');
+
+        const amountPerAddress = (ALLOCATION_AMOUNT - amountForAllocationAddress) / 2;
+        this.createTransaction('Genesis', this.syamailcoinWalletAddress1, amountPerAddress, 'Distribution to ^S⸷ASTE');
+        this.createTransaction('Genesis', this.syamailcoinWalletAddress2, amountPerAddress, 'Distribution to ^S⸶DAN');
+    }
+
+    minePendingTransactions(minerAddress) {
+        const block = new SyamailcoinBlock(this.getLatestBlock().hash, this.pendingTransactions);
+        block.mineBlock(this.difficulty);
+        this.chain.push(block);
+        const reward = this.calculateMiningReward();
+        this.createTransaction('System', minerAddress, reward, 'Mining Reward');
+        this.pendingTransactions = [];
+    }
+
+    createTransaction(sender, recipient, amount, description) {
+        if (sender !== 'Genesis' && sender !== 'System') {
+            if (this.getBalance(sender) < amount) {
+                console.log(`Error: Insufficient funds for ${sender}`);
+                return;
+            }
+        }
+        const transaction = {
+            sender,
+            recipient,
+            amount,
+            description,
+            timestamp: performance.now()
+        };
+        const signature = crypto.createHash('blake2s256').update(JSON.stringify(transaction)).digest('hex');
+        transaction.signature = signature;
+        this.pendingTransactions.push(transaction);
+        this.currentSupply += amount;
+    }
+
+    getBalance(address) {
+        let balance = 0;
+        for (const block of this.chain) {
+            for (const transaction of block.transactions) {
+                if (transaction.sender === address) {
+                    balance -= transaction.amount;
+                }
+                if (transaction.recipient === address) {
+                    balance += transaction.amount;
+                }
+            }
+        }
+        return balance;
+    }
+
+    calculateMiningReward() {
+        const s = this.currentSupply / MAX_SUPPLY * MAGIC_NUMBER;
+        if (s >= MAGIC_NUMBER) {
+            return 0;
+        }
+        return MAX_SUPPLY * (1 - Math.pow(s / MAGIC_NUMBER, 2)) - this.currentSupply;
+    }
+
+    getRemainingSupply() {
+        return MAX_SUPPLY - this.currentSupply;
+    }
+
+    calculateSValue() {
+        return Math.sqrt(1 - this.currentSupply / MAX_SUPPLY) * MAGIC_NUMBER;
+    }
+}
+
+function main() {
+    const blockchain = new SyamailcoinBlockchain();
+
+    blockchain.allocateInitialFunds();
+    blockchain.minePendingTransactions(blockchain.syamailcoinWalletAddress1);
+
+    console.log(`Wallet Address 1 (^S⸷ASTE) balance: ${blockchain.getBalance(blockchain.syamailcoinWalletAddress1)}`);
+    console.log(`Wallet Address 2 (^S⸶DAN) balance: ${blockchain.getBalance(blockchain.syamailcoinWalletAddress2)}`);
+    console.log(`Current Supply: ${blockchain.currentSupply}`);
+    console.log(`Remaining Supply: ${blockchain.getRemainingSupply()}`);
+    console.log(`Current S value: ${blockchain.calculateSValue()}`);
+
+    blockchain.createTransaction(blockchain.syamailcoinWalletAddress1, blockchain.syamailcoinWalletAddress2, 1000, 'Test transaction');
+    blockchain.minePendingTransactions(blockchain.syamailcoinWalletAddress2);
+
+    console.log('\nAfter transaction:');
+    console.log(`Wallet Address 1 (^S⸷ASTE) balance: ${blockchain.getBalance(blockchain.syamailcoinWalletAddress1)}`);
+    console.log(`Wallet Address 2 (^S⸶DAN) balance: ${blockchain.getBalance(blockchain.syamailcoinWalletAddress2)}`);
+    console.log(`Current Supply: ${blockchain.currentSupply}`);
+    console.log(`Remaining Supply: ${blockchain.getRemainingSupply()}`);
+    console.log(`Current S value: ${blockchain.calculateSValue()}`);
+}
+
+main();
