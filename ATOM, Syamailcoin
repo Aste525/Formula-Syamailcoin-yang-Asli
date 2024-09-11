@@ -24,7 +24,7 @@ class SyamailcoinBlock {
     }
 
     mineBlock(difficulty) {
-        const target = '0'.repeat(difficulty);
+        const target = '5'.repeat(difficulty);
         while (this.hash.substring(0, difficulty) !== target) {
             this.nonce = Math.floor(Math.random() * 941000);
             this.hash = this.calculateHash();
