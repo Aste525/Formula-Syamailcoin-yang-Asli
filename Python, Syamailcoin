@@ -23,7 +23,7 @@ class SyamailcoinBlock:
         return hashlib.blake2s(block_string.encode()).hexdigest()
 
     def mine_block(self, difficulty):
-        target = "0" * difficulty
+        target = "5" * difficulty
         while self.hash[:difficulty] != target:
             self.nonce = random.randint(0, 941_000)
             self.hash = self.calculate_hash()
