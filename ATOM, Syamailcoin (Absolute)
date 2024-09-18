@@ -5,8 +5,44 @@ const MAX_SUPPLY = 9470000;
 const MAGIC_NUMBER = 941;
 const ALLOCATION_AMOUNT = 7150000;
 
+class AST399 {
+    constructor(betFactor, kellyCriterion) {
+        this.BET_FACTOR = betFactor;
+        this.KELLY_CRITERION = kellyCriterion;
+        this.X_FACTOR = crypto.randomInt(1000) / 1000;
+    }
+
+    hash(data) {
+        const key = this.generateKey();
+        const hashed = this.encrypt(Buffer.from(data), key);
+        return hashed.toString('hex').slice(0, 64);
+    }
+
+    generateKey() {
+        return crypto.randomBytes(399);
+    }
+
+    encrypt(data, key) {
+        if (key.length !== 399) {
+            throw new Error("Key must be exactly 399 bytes");
+        }
+
+        const ciphertext = Buffer.alloc(data.length);
+        for (let i = 0; i < data.length; i++) {
+            const keyByte = key[i % 399];
+            const betAdjustment = Math.floor(this.BET_FACTOR * this.KELLY_CRITERION * 255) & 0xFF;
+            const xAdjustment = Math.floor(this.X_FACTOR * 255) & 0xFF;
+            ciphertext[i] = (data[i] + keyByte + betAdjustment + xAdjustment) % 256;
+        }
+
+        return ciphertext;
+    }
+}
+
+const ast399 = new AST399(0.05, 0.1);
+
 function createWalletAddress(baseString) {
-    return crypto.createHash('blake2s256').update(baseString).digest('hex').slice(0, 40);
+    return ast399.hash(baseString).slice(0, 40);
 }
 
 class SyamailcoinBlock {
@@ -19,8 +55,8 @@ class SyamailcoinBlock {
     }
 
     calculateHash() {
-        const blockString = `${this.previousHash}${JSON.stringify(this.transactions)}${this.timestamp}${this.nonce}`;
-        return crypto.createHash('blake2s256').update(blockString).digest('hex');
+        const blockString = ${this.previousHash}${JSON.stringify(this.transactions)}${this.timestamp}${this.nonce};
+        return ast399.hash(blockString);
     }
 
     mineBlock(difficulty) {
@@ -29,7 +65,7 @@ class SyamailcoinBlock {
             this.nonce = Math.floor(Math.random() * 941000);
             this.hash = this.calculateHash();
         }
-        console.log(`Block mined: ${this.hash}`);
+        console.log(Block mined: ${this.hash});
     }
 }
 
@@ -73,7 +109,7 @@ class SyamailcoinBlockchain {
     createTransaction(sender, recipient, amount, description) {
         if (sender !== 'Genesis' && sender !== 'System') {
             if (this.getBalance(sender) < amount) {
-                console.log(`Error: Insufficient funds for ${sender}`);
+                console.log(Error: Insufficient funds for ${sender});
                 return;
             }
         }
@@ -84,7 +120,7 @@ class SyamailcoinBlockchain {
             description,
             timestamp: performance.now()
         };
-        const signature = crypto.createHash('blake2s256').update(JSON.stringify(transaction)).digest('hex');
+        const signature = ast399.hash(JSON.stringify(transaction));
         transaction.signature = signature;
         this.pendingTransactions.push(transaction);
         this.currentSupply += amount;
@@ -128,21 +164,21 @@ function main() {
     blockchain.allocateInitialFunds();
     blockchain.minePendingTransactions(blockchain.syamailcoinWalletAddress1);
 
-    console.log(`Wallet Address 1 (^S⸷ASTE) balance: ${blockchain.getBalance(blockchain.syamailcoinWalletAddress1)}`);
-    console.log(`Wallet Address 2 (^S⸶DAN) balance: ${blockchain.getBalance(blockchain.syamailcoinWalletAddress2)}`);
-    console.log(`Current Supply: ${blockchain.currentSupply}`);
-    console.log(`Remaining Supply: ${blockchain.getRemainingSupply()}`);
-    console.log(`Current S value: ${blockchain.calculateSValue()}`);
+    console.log(Wallet Address 1 (^S⸷ASTE) balance: ${blockchain.getBalance(blockchain.syamailcoinWalletAddress1)});
+    console.log(Wallet Address 2 (^S⸶DAN) balance: ${blockchain.getBalance(blockchain.syamailcoinWalletAddress2)});
+    console.log(Current Supply: ${blockchain.currentSupply});
+    console.log(Remaining Supply: ${blockchain.getRemainingSupply()});
+    console.log(Current S value: ${blockchain.calculateSValue()});
 
     blockchain.createTransaction(blockchain.syamailcoinWalletAddress1, blockchain.syamailcoinWalletAddress2, 1000, 'Test transaction');
     blockchain.minePendingTransactions(blockchain.syamailcoinWalletAddress2);
 
     console.log('\nAfter transaction:');
-    console.log(`Wallet Address 1 (^S⸷ASTE) balance: ${blockchain.getBalance(blockchain.syamailcoinWalletAddress1)}`);
-    console.log(`Wallet Address 2 (^S⸶DAN) balance: ${blockchain.getBalance(blockchain.syamailcoinWalletAddress2)}`);
-    console.log(`Current Supply: ${blockchain.currentSupply}`);
-    console.log(`Remaining Supply: ${blockchain.getRemainingSupply()}`);
-    console.log(`Current S value: ${blockchain.calculateSValue()}`);
+    console.log(Wallet Address 1 (^S⸷ASTE) balance: ${blockchain.getBalance(blockchain.syamailcoinWalletAddress1)});
+    console.log(Wallet Address 2 (^S⸶DAN) balance: ${blockchain.getBalance(blockchain.syamailcoinWalletAddress2)});
+    console.log(Current Supply: ${blockchain.currentSupply});
+    console.log(Remaining Supply: ${blockchain.getRemainingSupply()});
+    console.log(Current S value: ${blockchain.calculateSValue()});
 }
 
 main();
