@@ -90,12 +90,9 @@ class SyamailcoinBlockchain {
     }
 
     allocateInitialFunds() {
-        const amountForAllocationAddress = ALLOCATION_AMOUNT * 0.5;
-        this.createTransaction('Genesis', this.allocationAddress, amountForAllocationAddress, '50% allocation to ^S⸷ASTE');
-
-        const amountPerAddress = (ALLOCATION_AMOUNT - amountForAllocationAddress) / 2;
-        this.createTransaction('Genesis', this.syamailcoinWalletAddress1, amountPerAddress, 'Distribution to ^S⸷ASTE');
-        this.createTransaction('Genesis', this.syamailcoinWalletAddress2, amountPerAddress, 'Distribution to ^S⸶DAN');
+        const amountPerAddress = ALLOCATION_AMOUNT / 2;
+        this.createTransaction('Genesis', this.syamailcoinWalletAddress1, amountPerAddress, '50% allocation to ^S⸷ASTE');
+        this.createTransaction('Genesis', this.syamailcoinWalletAddress2, amountPerAddress, '50% allocation to ^S⸶DAN');
     }
 
     minePendingTransactions(minerAddress) {
