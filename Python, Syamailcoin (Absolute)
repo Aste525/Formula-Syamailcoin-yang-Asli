@@ -67,7 +67,6 @@ class SyamailcoinBlockchain:
         self.pending_transactions = []
         self.syamailcoin_wallet_address_1 = create_wallet_address("^S⸷ASTE")
         self.syamailcoin_wallet_address_2 = create_wallet_address("^S⸶DAN")
-        self.allocation_address = create_wallet_address("^S⸷ASTE")
         self.current_supply = 0
 
     def create_genesis_block(self):
@@ -77,12 +76,9 @@ class SyamailcoinBlockchain:
         return self.chain[-1]
 
     def allocate_initial_funds(self):
-        amount_for_allocation_address = ALLOCATION_AMOUNT * 0.5
-        self.create_transaction("Genesis", self.allocation_address, amount_for_allocation_address, "50% allocation to ^S⸷ASTE")
-        
-        amount_per_address = (ALLOCATION_AMOUNT - amount_for_allocation_address) / 2
-        self.create_transaction("Genesis", self.syamailcoin_wallet_address_1, amount_per_address, "Distribution to ^S⸷ASTE")
-        self.create_transaction("Genesis", self.syamailcoin_wallet_address_2, amount_per_address, "Distribution to ^S⸶DAN")
+        amount_per_address = ALLOCATION_AMOUNT / 2
+        self.create_transaction("Genesis", self.syamailcoin_wallet_address_1, amount_per_address, "50% allocation to ^S⸷ASTE")
+        self.create_transaction("Genesis", self.syamailcoin_wallet_address_2, amount_per_address, "50% allocation to ^S⸶DAN")
 
     def mine_pending_transactions(self, miner_address):
         block = SyamailcoinBlock(self.get_latest_block().hash, self.pending_transactions)
