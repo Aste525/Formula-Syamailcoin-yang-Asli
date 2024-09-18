@@ -1,0 +1,116 @@
+from flask import Flask, jsonify, request
+from datetime import datetime
+import random
+
+app = Flask(__name__)
+
+ALLOCATION_AMOUNT = 7150000
+
+def AST399(data):
+    # Implementasi algoritma AST399 di sini
+    # Karena saya tidak memiliki detail spesifik tentang implementasinya,
+    # kita akan menggunakan fungsi placeholder
+    return f"AST399_HASH_{data}"
+
+blockchain = [
+    {
+        'index': 1,
+        'previous_hash': '0',
+        'timestamp': 1633024800,
+        'hash': AST399('genesis_block'),
+        'nonce': 100,
+        'transactions': []
+    }
+]
+
+transactions = []
+
+genesis_addresses = [
+    {
+        'address': '^S⸷ASTE',
+        'amount': ALLOCATION_AMOUNT / 2
+    },
+    {
+        'address': '^S⸶DAN',
+        'amount': ALLOCATION_AMOUNT / 2
+    }
+]
+
+def calculate_hash(index, previous_hash, timestamp, transactions, nonce):
+    block_string = f"{index}{previous_hash}{timestamp}{transactions}{nonce}"
+    return AST399(block_string)
+
+def allocate_initial_funds():
+    amount_per_address = ALLOCATION_AMOUNT / 2
+    for address in genesis_addresses:
+        transactions.append({
+            'sender': 'Genesis',
+            'recipient': address['address'],
+            'amount': amount_per_address,
+            'description': f"50% allocation to {address['address']}",
+            'timestamp': datetime.now().timestamp()
+        })
+
+@app.route('/chain', methods=['GET'])
+def get_chain():
+    return jsonify({'chain': blockchain}), 200
+
+@app.route('/transactions', methods=['GET'])
+def get_transactions():
+    return jsonify({'transactions': transactions}), 200
+
+@app.route('/genesis', methods=['GET'])
+def get_genesis_addresses():
+    return jsonify({'genesis_addresses': genesis_addresses}), 200
+
+@app.route('/mine', methods=['GET'])
+def mine_block():
+    last_block = blockchain[-1]
+    new_block = {
+        'index': len(blockchain) + 1,
+        'previous_hash': last_block['hash'],
+        'timestamp': datetime.now().timestamp(),
+        'transactions': transactions[:],
+        'nonce': random.randint(0, 941000)
+    }
+    
+    proof = new_block['nonce']
+    while not calculate_hash(new_block['index'], new_block['previous_hash'], 
+                             new_block['timestamp'], str(new_block['transactions']), 
+                             proof).startswith('AST399'):
+        proof = random.randint(0, 941000)
+    
+    new_block['nonce'] = proof
+    new_block['hash'] = calculate_hash(new_block['index'], new_block['previous_hash'], 
+                                       new_block['timestamp'], str(new_block['transactions']), 
+                                       proof)
+    
+    blockchain.append(new_block)
+    transactions.clear()
+    
+    return jsonify({
+        'message': 'New block mined',
+        'block': new_block
+    }), 200
+
+@app.route('/transaction/new', methods=['POST'])
+def new_transaction():
+    values = request.get_json()
+    required = ['sender', 'recipient', 'amount', 'description']
+    if not all(k in values for k in required):
+        return jsonify({'message': 'Missing values'}), 400
+    
+    transaction = {
+        'sender': values['sender'],
+        'recipient': values['recipient'],
+        'amount': values['amount'],
+        'description': values['description'],
+        'timestamp': datetime.now().timestamp()
+    }
+    transactions.append(transaction)
+    
+    return jsonify({'message': f'Transaction will be added to Block {len(blockchain) + 1}'}), 201
+
+if __name__ == '__main__':
+    allocate_initial_funds()
+    app.run(debug=True)
