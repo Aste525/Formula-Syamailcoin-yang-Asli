@@ -7,9 +7,6 @@ app = Flask(__name__)
 ALLOCATION_AMOUNT = 7150000
 
 def AST399(data):
-    # Implementasi algoritma AST399 di sini
-    # Karena saya tidak memiliki detail spesifik tentang implementasinya,
-    # kita akan menggunakan fungsi placeholder
     return f"AST399_HASH_{data}"
 
 blockchain = [
