@@ -6,6 +6,7 @@ import secrets
 MAX_SUPPLY = 9_470_000
 MAGIC_NUMBER = 941
 ALLOCATION_AMOUNT = 7_150_000
+POET_SLEEP_TIME = 114
 
 class AST399:
     def __init__(self, bet_factor, kelly_criterion):
