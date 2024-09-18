@@ -1,14 +1,44 @@
-import hashlib
 import time
 import random
 import math
+import secrets
 
 MAX_SUPPLY = 9_470_000
 MAGIC_NUMBER = 941
 ALLOCATION_AMOUNT = 7_150_000
 
+class AST399:
+    def __init__(self, bet_factor, kelly_criterion):
+        self.BET_FACTOR = bet_factor
+        self.KELLY_CRITERION = kelly_criterion
+        self.X_FACTOR = secrets.randbelow(1000) / 1000
+
+    def hash(self, data):
+        key = self.generate_key()
+        hashed = self.encrypt(data.encode(), key)
+        return hashed.hex()[:64]
+
+    def generate_key(self):
+        return secrets.token_bytes(399)
+
+    def encrypt(self, data, key):
+        if len(key) != 399:
+            raise ValueError("Key must be exactly 399 bytes")
+
+        ciphertext = bytearray()
+        for i, byte in enumerate(data):
+            key_byte = key[i % 399]
+            bet_adjustment = int(self.BET_FACTOR * self.KELLY_CRITERION * 255) & 0xFF
+            x_adjustment = int(self.X_FACTOR * 255) & 0xFF
+            encrypted_byte = (byte + key_byte + bet_adjustment + x_adjustment) % 256
+            ciphertext.append(encrypted_byte)
+
+        return bytes(ciphertext)
+
+ast399 = AST399(bet_factor=0.05, kelly_criterion=0.1)
+
 def create_wallet_address(base_string):
-    return hashlib.blake2s(base_string.encode()).hexdigest()[:40]
+    return ast399.hash(base_string)[:40]
 
 class SyamailcoinBlock:
     def __init__(self, previous_hash, transactions):
@@ -20,7 +50,7 @@ class SyamailcoinBlock:
 
     def calculate_hash(self):
         block_string = f"{self.previous_hash}{self.transactions}{self.timestamp}{self.nonce}"
-        return hashlib.blake2s(block_string.encode()).hexdigest()
+        return ast399.hash(block_string)
 
     def mine_block(self, difficulty):
         target = "5" * difficulty
@@ -73,7 +103,7 @@ class SyamailcoinBlockchain:
             "description": description, 
             "timestamp": time.time()
         }
-        signature = hashlib.blake2s(str(transaction).encode()).hexdigest()
+        signature = ast399.hash(str(transaction))
         transaction["signature"] = signature
         self.pending_transactions.append(transaction)
         self.current_supply += amount
