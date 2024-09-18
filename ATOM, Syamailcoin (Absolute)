@@ -4,6 +4,7 @@ const { performance } = require('perf_hooks');
 const MAX_SUPPLY = 9470000;
 const MAGIC_NUMBER = 941;
 const ALLOCATION_AMOUNT = 7150000;
+const RUNTIME_MS = 114000;
 
 class AST399 {
     constructor(betFactor, kellyCriterion) {
