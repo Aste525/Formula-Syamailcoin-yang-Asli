@@ -10,7 +10,7 @@ class AST399 {
     constructor(betFactor, kellyCriterion) {
         this.BET_FACTOR = betFactor;
         this.KELLY_CRITERION = kellyCriterion;
-        this.X_FACTOR = crypto.randomInt(1000) / 1000;
+        this.X_FACTOR = crypto.randomInt(1001) / 1000;
     }
 
     hash(data) {
