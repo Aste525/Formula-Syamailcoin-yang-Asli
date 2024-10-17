@@ -2,6 +2,7 @@ import time
 import random
 import math
 import secrets
+import threading
 
 MAX_SUPPLY = 9_470_000
 MAGIC_NUMBER = 941
@@ -12,7 +13,7 @@ class AST399:
     def __init__(self, bet_factor, kelly_criterion):
         self.BET_FACTOR = bet_factor
         self.KELLY_CRITERION = kelly_criterion
-        self.X_FACTOR = secrets.randbelow(1000) / 1000
+        self.X_FACTOR = secrets.randbelow(1001) / 1000
 
     def hash(self, data):
         key = self.generate_key()
@@ -53,21 +54,14 @@ class SyamailcoinBlock:
         block_string = f"{self.previous_hash}{self.transactions}{self.timestamp}{self.nonce}"
         return ast399.hash(block_string)
 
-    def mine_block(self, difficulty):
-        target = "5" * difficulty
-        while self.hash[:difficulty] != target:
-            self.nonce = random.randint(0, 941_000)
-            self.hash = self.calculate_hash()
-        print(f"Block mined: {self.hash}")
-
 class SyamailcoinBlockchain:
     def __init__(self):
         self.chain = [self.create_genesis_block()]
-        self.difficulty = 22
         self.pending_transactions = []
         self.syamailcoin_wallet_address_1 = create_wallet_address("^S⸷ASTE")
         self.syamailcoin_wallet_address_2 = create_wallet_address("^S⸶DAN")
         self.current_supply = 0
+        self.lock = threading.Lock()
 
     def create_genesis_block(self):
         return SyamailcoinBlock("0", [])
@@ -81,12 +75,12 @@ class SyamailcoinBlockchain:
         self.create_transaction("Genesis", self.syamailcoin_wallet_address_2, amount_per_address, "50% allocation to ^S⸶DAN")
 
     def mine_pending_transactions(self, miner_address):
-        block = SyamailcoinBlock(self.get_latest_block().hash, self.pending_transactions)
-        block.mine_block(self.difficulty)
-        self.chain.append(block)
-        reward = self.calculate_mining_reward()
-        self.create_transaction("System", miner_address, reward, "Mining Reward")
-        self.pending_transactions = []
+        with self.lock:
+            block = SyamailcoinBlock(self.get_latest_block().hash, self.pending_transactions)
+            self.chain.append(block)
+            reward = self.calculate_mining_reward()
+            self.create_transaction("System", miner_address, reward, "Mining Reward")
+            self.pending_transactions = []
 
     def create_transaction(self, sender, recipient, amount, description):
         if sender != "Genesis" and sender != "System":
@@ -127,27 +121,37 @@ class SyamailcoinBlockchain:
     def calculate_s_value(self):
         return math.sqrt(1 - self.current_supply/MAX_SUPPLY) * MAGIC_NUMBER
 
+def poet_consensus(blockchain, miner_address):
+    while True:
+        sleep_time = random.randint(1, POET_SLEEP_TIME)
+        time.sleep(sleep_time)
+        blockchain.mine_pending_transactions(miner_address)
+        print(f"Miner {miner_address} mined a block after {sleep_time} seconds")
+
 def main():
     blockchain = SyamailcoinBlockchain()
 
     blockchain.allocate_initial_funds()
-    blockchain.mine_pending_transactions(blockchain.syamailcoin_wallet_address_1)
 
-    print(f"Wallet Address 1 (^S⸷ASTE) balance: {blockchain.get_balance(blockchain.syamailcoin_wallet_address_1)}")
-    print(f"Wallet Address 2 (^S⸶DAN) balance: {blockchain.get_balance(blockchain.syamailcoin_wallet_address_2)}")
-    print(f"Current Supply: {blockchain.current_supply}")
-    print(f"Remaining Supply: {blockchain.get_remaining_supply()}")
-    print(f"Current S value: {blockchain.calculate_s_value()}")
+    # Start PoET consensus for both miners
+    threading.Thread(target=poet_consensus, args=(blockchain, blockchain.syamailcoin_wallet_address_1)).start()
+    threading.Thread(target=poet_consensus, args=(blockchain, blockchain.syamailcoin_wallet_address_2)).start()
 
-    blockchain.create_transaction(blockchain.syamailcoin_wallet_address_1, blockchain.syamailcoin_wallet_address_2, 1000, "Test transaction")
-    blockchain.mine_pending_transactions(blockchain.syamailcoin_wallet_address_2)
+    # Simulate some transactions and print balances
+    for _ in range(7):
+        time.sleep(7)  # Wait for some blocks to be mined
+        print("\nCurrent state:")
+        print(f"Wallet Address 1 (^S⸷ASTE) balance: {blockchain.get_balance(blockchain.syamailcoin_wallet_address_1)}")
+        print(f"Wallet Address 2 (^S⸶DAN) balance: {blockchain.get_balance(blockchain.syamailcoin_wallet_address_2)}")
+        print(f"Current Supply: {blockchain.current_supply}")
+        print(f"Remaining Supply: {blockchain.get_remaining_supply()}")
+        print(f"Current S value: {blockchain.calculate_s_value()}")
 
-    print("\nAfter transaction:")
-    print(f"Wallet Address 1 (^S⸷ASTE) balance: {blockchain.get_balance(blockchain.syamailcoin_wallet_address_1)}")
-    print(f"Wallet Address 2 (^S⸶DAN) balance: {blockchain.get_balance(blockchain.syamailcoin_wallet_address_2)}")
-    print(f"Current Supply: {blockchain.current_supply}")
-    print(f"Remaining Supply: {blockchain.get_remaining_supply()}")
-    print(f"Current S value: {blockchain.calculate_s_value()}")
+        # Create a random transaction
+        sender = random.choice([blockchain.syamailcoin_wallet_address_1, blockchain.syamailcoin_wallet_address_2])
+        recipient = blockchain.syamailcoin_wallet_address_1 if sender == blockchain.syamailcoin_wallet_address_2 else blockchain.syamailcoin_wallet_address_2
+        amount = random.randint(1, 1000)
+        blockchain.create_transaction(sender, recipient, amount, "Random transaction")
 
 if __name__ == "__main__":
     main()
