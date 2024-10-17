@@ -4,7 +4,7 @@ const { performance } = require('perf_hooks');
 const MAX_SUPPLY = 9470000;
 const MAGIC_NUMBER = 941;
 const ALLOCATION_AMOUNT = 7150000;
-const RUNTIME_MS = 114000;
+const POET_SLEEP_TIME = 114000; // 114 seconds in milliseconds
 
 class AST399 {
     constructor(betFactor, kellyCriterion) {
@@ -56,28 +56,17 @@ class SyamailcoinBlock {
     }
 
     calculateHash() {
-        const blockString = ${this.previousHash}${JSON.stringify(this.transactions)}${this.timestamp}${this.nonce};
+        const blockString = `${this.previousHash}${JSON.stringify(this.transactions)}${this.timestamp}${this.nonce}`;
         return ast399.hash(blockString);
-    }
-
-    mineBlock(difficulty) {
-        const target = '5'.repeat(difficulty);
-        while (this.hash.substring(0, difficulty) !== target) {
-            this.nonce = Math.floor(Math.random() * 941000);
-            this.hash = this.calculateHash();
-        }
-        console.log(Block mined: ${this.hash});
     }
 }
 
 class SyamailcoinBlockchain {
     constructor() {
         this.chain = [this.createGenesisBlock()];
-        this.difficulty = 22;
         this.pendingTransactions = [];
         this.syamailcoinWalletAddress1 = createWalletAddress('^S⸷ASTE');
         this.syamailcoinWalletAddress2 = createWalletAddress('^S⸶DAN');
-        this.allocationAddress = createWalletAddress('^S⸷ASTE');
         this.currentSupply = 0;
     }
 
@@ -97,7 +86,6 @@ class SyamailcoinBlockchain {
 
     minePendingTransactions(minerAddress) {
         const block = new SyamailcoinBlock(this.getLatestBlock().hash, this.pendingTransactions);
-        block.mineBlock(this.difficulty);
         this.chain.push(block);
         const reward = this.calculateMiningReward();
         this.createTransaction('System', minerAddress, reward, 'Mining Reward');
@@ -107,7 +95,7 @@ class SyamailcoinBlockchain {
     createTransaction(sender, recipient, amount, description) {
         if (sender !== 'Genesis' && sender !== 'System') {
             if (this.getBalance(sender) < amount) {
-                console.log(Error: Insufficient funds for ${sender});
+                console.log(`Error: Insufficient funds for ${sender}`);
                 return;
             }
         }
@@ -156,27 +144,46 @@ class SyamailcoinBlockchain {
     }
 }
 
+function poetConsensus(blockchain, minerAddress) {
+    setInterval(() => {
+        const sleepTime = Math.floor(Math.random() * POET_SLEEP_TIME) + 1;
+        setTimeout(() => {
+            blockchain.minePendingTransactions(minerAddress);
+            console.log(`Miner ${minerAddress} mined a block after ${sleepTime} milliseconds`);
+        }, sleepTime);
+    }, POET_SLEEP_TIME);
+}
+
 function main() {
     const blockchain = new SyamailcoinBlockchain();
 
     blockchain.allocateInitialFunds();
-    blockchain.minePendingTransactions(blockchain.syamailcoinWalletAddress1);
 
-    console.log(Wallet Address 1 (^S⸷ASTE) balance: ${blockchain.getBalance(blockchain.syamailcoinWalletAddress1)});
-    console.log(Wallet Address 2 (^S⸶DAN) balance: ${blockchain.getBalance(blockchain.syamailcoinWalletAddress2)});
-    console.log(Current Supply: ${blockchain.currentSupply});
-    console.log(Remaining Supply: ${blockchain.getRemainingSupply()});
-    console.log(Current S value: ${blockchain.calculateSValue()});
+    // Start PoET consensus for both miners
+    poetConsensus(blockchain, blockchain.syamailcoinWalletAddress1);
+    poetConsensus(blockchain, blockchain.syamailcoinWalletAddress2);
 
-    blockchain.createTransaction(blockchain.syamailcoinWalletAddress1, blockchain.syamailcoinWalletAddress2, 1000, 'Test transaction');
-    blockchain.minePendingTransactions(blockchain.syamailcoinWalletAddress2);
+    // Simulate some transactions and print balances
+    let iterations = 0;
+    const interval = setInterval(() => {
+        console.log("\nCurrent state:");
+        console.log(`Wallet Address 1 (^S⸷ASTE) balance: ${blockchain.getBalance(blockchain.syamailcoinWalletAddress1)}`);
+        console.log(`Wallet Address 2 (^S⸶DAN) balance: ${blockchain.getBalance(blockchain.syamailcoinWalletAddress2)}`);
+        console.log(`Current Supply: ${blockchain.currentSupply}`);
+        console.log(`Remaining Supply: ${blockchain.getRemainingSupply()}`);
+        console.log(`Current S value: ${blockchain.calculateSValue()}`);
 
-    console.log('\nAfter transaction:');
-    console.log(Wallet Address 1 (^S⸷ASTE) balance: ${blockchain.getBalance(blockchain.syamailcoinWalletAddress1)});
-    console.log(Wallet Address 2 (^S⸶DAN) balance: ${blockchain.getBalance(blockchain.syamailcoinWalletAddress2)});
-    console.log(Current Supply: ${blockchain.currentSupply});
-    console.log(Remaining Supply: ${blockchain.getRemainingSupply()});
-    console.log(Current S value: ${blockchain.calculateSValue()});
+        // Create a random transaction
+        const sender = Math.random() < 0.5 ? blockchain.syamailcoinWalletAddress1 : blockchain.syamailcoinWalletAddress2;
+        const recipient = sender === blockchain.syamailcoinWalletAddress1 ? blockchain.syamailcoinWalletAddress2 : blockchain.syamailcoinWalletAddress1;
+        const amount = Math.floor(Math.random() * 1000) + 1;
+        blockchain.createTransaction(sender, recipient, amount, "Random transaction");
+
+        iterations++;
+        if (iterations >= 7) {
+            clearInterval(interval);
+        }
+    }, 7000);
 }
 
 main();
